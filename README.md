@@ -95,10 +95,35 @@ stock persistent top-k kernel has documented nondeterministic results on GB10.
 Set `EXACT_TOPK=0` only after validating output correctness on your exact driver,
 firmware, and vLLM combination.
 
-This intentionally omits the reference repo's hybrid weight conversion, reduced
-MTP vocabulary, request watcher, shell control frontend, and separately compiled
-CUDA top-k extension. They are optimizations rather than prerequisites and would
-increase behavioral or supply-chain complexity.
+### Optional reduced MTP draft vocabulary
+
+The image includes an audited 65,536-token draft vocabulary and a runtime patch
+that applies it only to MTP proposals. It is disabled by default. Enable it in
+`.env` before creating the container:
+
+```dotenv
+ENABLE_REDUCED_DRAFT_VOCAB=1
+```
+
+Then recreate the container:
+
+```bash
+docker compose up -d --build --force-recreate
+```
+
+This option is effective only when MTP itself is enabled with vLLM's
+`--speculative-config`. It does not enable MTP automatically. The draft head
+scores 65,536 likely tokens instead of the full 248,320-token vocabulary, reducing
+its weight read from about 1.27 GiB to about 320 MiB per proposed token. The full
+target model still verifies proposals and retains its complete vocabulary; an
+excluded draft token can still be emitted by the target after rejection.
+
+Leave the option off when not using MTP. For multilingual or unusual-token-heavy
+workloads, compare MTP acceptance and throughput with the option both on and off.
+
+This intentionally omits the reference repo's hybrid weight conversion, request
+watcher, shell control frontend, and separately compiled CUDA top-k extension.
+The reduced MTP vocabulary is included as an opt-in, checksum-pinned artifact.
 
 ## Security and provenance review
 

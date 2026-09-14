@@ -25,6 +25,7 @@ services:
       VLLM_PLE_MMAP_MADVISE: ${PLE_MADVISE:-random}
       VLLM_QSA_EXACT_TOPK: ${EXACT_TOPK:-1}
       VLLM_ALLOW_LONG_MAX_MODEL_LEN: "0"
+      ENABLE_REDUCED_DRAFT_VOCAB: ${ENABLE_REDUCED_DRAFT_VOCAB:-0}
     security_opt:
       - no-new-privileges:true
     cap_drop:

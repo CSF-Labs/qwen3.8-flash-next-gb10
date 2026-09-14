@@ -25,6 +25,10 @@ ADD --checksum=sha256:802f6564e514fe5a228738873570f9ce94c230f40d3a7c932cc5893e21
     ${PATCH_ROOT}/patch_qsa_exact_topk.py /tmp/patch_qsa_exact_topk.py
 ADD --checksum=sha256:5630416895c17c49b7b1cba294f2cc12b1bd788122c2d19f93afa058c1ea1a7f \
     ${PATCH_ROOT}/patch_block_fp8_mtp.py /tmp/patch_block_fp8_mtp.py
+ADD --checksum=sha256:209ddfba7ff2e6b434a4442b9b9176bd478d9d17ded94ff46a0c04a8ae42ed0e \
+    ${PATCH_ROOT}/patch_mtp_draft_vocab.py /tmp/patch_mtp_draft_vocab.py
+ADD --checksum=sha256:6459e0fdc8df30e0c1d1f45be7c1b6bef0d68b0e73c073a82c52ea2a7f4b26d4 \
+    ${PATCH_ROOT}/draft_vocab_65536.npy /opt/qwen/draft_vocab_65536.npy
 
 RUN set -eu; \
     ple="${QWEN_IMPL}/ple_layer.py"; \
@@ -34,6 +38,7 @@ RUN set -eu; \
     python3 /tmp/patch_mamba_block_size.py "${VLLM_SITE}"; \
     python3 /tmp/patch_qsa_exact_topk.py "${QWEN_IMPL}/ops/qsa.py"; \
     python3 /tmp/patch_block_fp8_mtp.py "${VLLM_SITE}"; \
+    python3 /tmp/patch_mtp_draft_vocab.py "${QWEN_IMPL}/mtp.py"; \
     python3 -m py_compile "$ple" "${VLLM_SITE}/vllm_ple_mmap.py"; \
     rm -f /tmp/patch_*.py
 
@@ -48,4 +53,8 @@ RUN set -eu; \
     sed -i 's/for num_warps in \[2, 4\]/for num_warps in [2]  # GB10 tl.dot workaround/' "$cdh"
 
 EXPOSE 8000
+
+COPY scripts/container-entrypoint.sh /usr/local/bin/qwen-entrypoint
+RUN chmod 0755 /usr/local/bin/qwen-entrypoint
+ENTRYPOINT ["/usr/local/bin/qwen-entrypoint"]
 
