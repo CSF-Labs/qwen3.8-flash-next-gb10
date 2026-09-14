@@ -1,0 +1,69 @@
+services:
+  qwen:
+    build:
+      context: .
+      args:
+        VLLM_IMAGE: ${VLLM_IMAGE:-vllm/vllm-openai:v0.29.0}
+    image: qwen38-flash-next-gb10:v0.29.0
+    container_name: qwen38-flash-next
+    restart: unless-stopped
+    gpus: all
+    ipc: host
+    shm_size: 16gb
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT:-8000}:8000"
+    volumes:
+      - ${MODELS_DIR:-${HOME}/models}:/models:ro
+      - vllm-compile-cache:/root/.cache/vllm
+      - flashinfer-cache:/root/.cache/flashinfer
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+      HF_HUB_DISABLE_XET: "0"
+      HF_XET_HIGH_PERFORMANCE: "1"
+      VLLM_PLE_MMAP: "1"
+      VLLM_PLE_MMAP_WORKERS: ${PLE_WORKERS:-32}
+      VLLM_PLE_MMAP_MADVISE: ${PLE_MADVISE:-random}
+      VLLM_QSA_EXACT_TOPK: ${EXACT_TOPK:-1}
+      VLLM_ALLOW_LONG_MAX_MODEL_LEN: "0"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    command:
+      - /models/${MODEL_FOLDER:-Qwen3.8-Flash-Next-NVFP4}
+      - --served-model-name
+      - qwen3.8-flash-next
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --load-format
+      - safetensors
+      - --max-model-len
+      - ${MAX_MODEL_LEN:-262144}
+      - --max-num-seqs
+      - ${MAX_NUM_SEQS:-8}
+      - --gpu-memory-utilization
+      - ${GPU_MEMORY_UTILIZATION:-0.80}
+      - --enable-prefix-caching
+      - --enable-chunked-prefill
+      - --max-num-batched-tokens
+      - ${MAX_BATCHED_TOKENS:-8192}
+      - --kv-cache-dtype
+      - auto
+      - --no-enable-flashinfer-autotune
+      - --enable-auto-tool-choice
+      - --tool-call-parser
+      - qwen3_coder
+      - --reasoning-parser
+      - qwen3
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15m
+
+volumes:
+  vllm-compile-cache:
+  flashinfer-cache:
