@@ -40,6 +40,7 @@ services:
       - "8000"
       - --load-format
       - safetensors
+      - --enforce-eager
       - --max-model-len
       - ${MAX_MODEL_LEN:-262144}
       - --max-num-seqs

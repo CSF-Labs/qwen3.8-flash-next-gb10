@@ -3,7 +3,9 @@
 This project serves NVIDIA's official `nvidia/Qwen3.8-Flash-Next-NVFP4`
 checkpoint through vLLM's OpenAI-compatible API. It targets a DGX Spark or a
 compatible 128 GB GB10/aarch64 system. MTP speculative decoding is enabled by
-default with two proposed tokens per decoding step.
+default with two proposed tokens per decoding step. Eager execution is also the
+default (`--enforce-eager`), disabling CUDA graphs in favor of a simpler execution
+path and lower graph-capture memory use.
 
 The image starts from the official stable `vllm/vllm-openai:v0.29.0` image. A
 floating `latest` or `nightly` tag is deliberately not used: the model-specific
