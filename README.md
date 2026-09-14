@@ -2,7 +2,8 @@
 
 This project serves NVIDIA's official `nvidia/Qwen3.8-Flash-Next-NVFP4`
 checkpoint through vLLM's OpenAI-compatible API. It targets a DGX Spark or a
-compatible 128 GB GB10/aarch64 system.
+compatible 128 GB GB10/aarch64 system. MTP speculative decoding is enabled by
+default with two proposed tokens per decoding step.
 
 The image starts from the official stable `vllm/vllm-openai:v0.29.0` image. A
 floating `latest` or `nightly` tag is deliberately not used: the model-specific
@@ -98,8 +99,9 @@ firmware, and vLLM combination.
 ### Optional reduced MTP draft vocabulary
 
 The image includes an audited 65,536-token draft vocabulary and a runtime patch
-that applies it only to MTP proposals. It is disabled by default. Enable it in
-`.env` before creating the container:
+that applies it only to MTP proposals. MTP=2 is enabled by default, while the
+reduced vocabulary is disabled by default. Enable it in `.env` before creating
+the container:
 
 ```dotenv
 ENABLE_REDUCED_DRAFT_VOCAB=1
@@ -111,15 +113,15 @@ Then recreate the container:
 docker compose up -d --build --force-recreate
 ```
 
-This option is effective only when MTP itself is enabled with vLLM's
-`--speculative-config`. It does not enable MTP automatically. The draft head
-scores 65,536 likely tokens instead of the full 248,320-token vocabulary, reducing
-its weight read from about 1.27 GiB to about 320 MiB per proposed token. The full
-target model still verifies proposals and retains its complete vocabulary; an
-excluded draft token can still be emitted by the target after rejection.
+The draft head then scores 65,536 likely tokens instead of the full 248,320-token
+vocabulary, reducing its weight read from about 1.27 GiB to about 320 MiB per
+proposed token. The full target model still verifies proposals and retains its
+complete vocabulary; an excluded draft token can still be emitted by the target
+after rejection.
 
-Leave the option off when not using MTP. For multilingual or unusual-token-heavy
-workloads, compare MTP acceptance and throughput with the option both on and off.
+For multilingual or unusual-token-heavy workloads, compare MTP acceptance and
+throughput with the reduced-vocabulary option both on and off. To disable MTP
+entirely, remove the `--speculative-config` pair from `compose.yaml`.
 
 This intentionally omits the reference repo's hybrid weight conversion, request
 watcher, shell control frontend, and separately compiled CUDA top-k extension.

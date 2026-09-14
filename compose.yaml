@@ -58,6 +58,8 @@ services:
       - qwen3_coder
       - --reasoning-parser
       - qwen3
+      - --speculative-config
+      - '{"method":"mtp","num_speculative_tokens":2}'
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
       interval: 30s
