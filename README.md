@@ -26,9 +26,20 @@ patches modify vLLM internals and must be tied to a known-compatible release.
    each model in its own subfolder. The official checkpoint's approximately 50
    GiB PLE/n-gram table is read via `mmap` while serving, so network filesystems
    are a poor fit.
-6. Review and accept both the NVIDIA Open Model License and the linked Qwen
+6. Install the Hugging Face CLI with Xet support on the host. Xet is important
+   for the checkpoint's very large files:
+
+   ```bash
+   python3 -m pip install --user -U huggingface_hub
+   hf --help
+   ```
+
+   If your Python user scripts directory is not already in `PATH`, add it before
+   running the downloader. Alternatively, install the CLI in a virtual environment.
+7. Review and accept both the NVIDIA Open Model License and the linked Qwen
    Community License terms on the model page. If Hugging Face requires
-   authentication, create a read-only token.
+   authentication, create a read-only token and run `hf auth login`, or export
+   `HF_TOKEN` before invoking the downloader.
 
 Do not expose this unauthenticated API directly to the Internet. The default bind
 address is loopback only; put an authenticated reverse proxy in front of it for
@@ -46,9 +57,10 @@ docker compose up -d
 docker compose logs -f qwen
 ```
 
-The download is roughly 130+ GB and is resumable. The downloader requires exactly
-one destination-folder parameter. To use another subfolder, download there and
-set `MODEL_FOLDER` in `.env` to that subfolder's name. `MODELS_DIR` defaults to
+The download is roughly 130+ GB and is resumable. The downloader runs the host's
+`hf` CLI directly and requires exactly one destination-folder parameter; it does
+not start or pull a Docker image. To use another subfolder, download there and set
+`MODEL_FOLDER` in `.env` to that subfolder's name. `MODELS_DIR` defaults to
 `~/models`; Compose mounts it read-only at `/models` in the serving container.
 
 Model initialization can take 10–20 minutes. Compose's health check allows 15

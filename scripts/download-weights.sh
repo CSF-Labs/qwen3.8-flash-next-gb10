@@ -4,7 +4,6 @@
 set -euo pipefail
 
 MODEL_ID="nvidia/Qwen3.8-Flash-Next-NVFP4"
-DOWNLOAD_IMAGE="${VLLM_IMAGE:-vllm/vllm-openai:v0.29.0}"
 
 if [ "$#" -ne 1 ]; then
   echo "Usage: $0 TARGET_FOLDER" >&2
@@ -12,25 +11,21 @@ if [ "$#" -ne 1 ]; then
   exit 2
 fi
 
+if ! command -v hf >/dev/null 2>&1; then
+  echo "Error: the Hugging Face 'hf' CLI is not installed or is not in PATH." >&2
+  echo "Install it with: python3 -m pip install --user -U huggingface_hub" >&2
+  exit 127
+fi
+
 target="$1"
 mkdir -p "$target"
 target="$(cd "$target" && pwd -P)"
 
-token_args=()
-if [ -n "${HF_TOKEN:-}" ]; then
-  token_args=(-e HF_TOKEN)
-fi
-
 echo ">> Downloading $MODEL_ID to $target"
 echo ">> The download is resumable; rerun this command after an interruption."
-docker run --rm \
-  --name qwen38-weights-download \
-  --entrypoint hf \
-  -e HF_HUB_DISABLE_XET=0 \
-  -e HF_XET_HIGH_PERFORMANCE=1 \
-  "${token_args[@]}" \
-  -v "$target:/model" \
-  "$DOWNLOAD_IMAGE" \
-  download "$MODEL_ID" --local-dir /model --max-workers "${MAX_WORKERS:-8}"
+HF_HUB_DISABLE_XET=0 HF_XET_HIGH_PERFORMANCE=1 \
+  hf download "$MODEL_ID" \
+    --local-dir "$target" \
+    --max-workers "${MAX_WORKERS:-8}"
 
 echo ">> Download complete: $target"
